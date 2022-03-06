@@ -58,17 +58,17 @@ class App:
     def create_movie(self, movie_title, movie_No):
         with self.driver.session() as session:
             result = session.write_transaction(
-                self._create_movie, movie_title)
+                self._create_movie, movie_title, movie_No)
             for row in result:
                 print("Created movie: {m}".format(m=row['m']))
     
     @staticmethod
-    def _create_movie(tx, movie_title):
+    def _create_movie(tx, movie_title, movie_No):
         query = (
-            "CREATE (m:Movie { title: $movie_title }) "
+            "CREATE (m:Movie { title: $movie_title, No: $movie_No }) "
             "RETURN m"
         )
-        result = tx.run(query, movie_title=movie_title)
+        result = tx.run(query, movie_title=movie_title, movie_No=movie_No)
         try:
             return [{"m": row["m"]["title"]}
                     for row in result]
@@ -85,16 +85,16 @@ class App:
                 print("Created recommendation between: {m1}, {m2}".format(m1=row['m1'], m2=row['m2']))
 
     @staticmethod
-    def _create_and_return_recommendation(tx, m1_title, m2_title):
+    def _create_and_return_recommendation(tx, m1_No, m2_No):
         query = (
             "MATCH (m1:Movie) "
-            "WHERE m1.title = $m1_title "
+            "WHERE m1.No = $m1_No "
             "OPTIONAL MATCH (m2:Movie) "
-            "WHERE m2.title = $m2_title "
-            "CREATE (m1)-[r:recommended]->(m2) "
+            "WHERE m2.No = $m2_No "
+            "CREATE (m1)-[r:Recommended]->(m2) "
             "RETURN m1,m2"
         )
-        result = tx.run(query, m1_title=m1_title, m2_title=m2_title)
+        result = tx.run(query, m1_No=m1_No, m2_No=m2_No)
         try:
             return [{"m1": row["m1"]["title"], "m2": row["m2"]["title"]}
                     for row in result]
@@ -113,8 +113,8 @@ def neo_login():
 
 if __name__ == "__main__":
     app=neo_login()
-    # app.create_movie("abc")
-    # app.create_movie("def")
-    app.create_movie_recommendation("abc", "def")
+    # app.create_movie("abc", "594")
+    # app.create_movie("def", "578")
+    # app.create_movie_recommendation("594", "578")
     app.close()
 # jX4k6e9P-b7is1cnuw88egr8mMi9KrJaxVnf1rFWjbE

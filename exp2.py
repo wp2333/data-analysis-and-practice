@@ -151,7 +151,10 @@ def search_movie(url,depth,end):
 
     # 保存数据
     saveData(data,save_path)
-    print('No.'+str(ctr)+' finished!\n')
+    print('\nNo.'+str(ctr)+' finished!')
+
+    # 创建neo4j节点
+    app.create_movie(data["片名"], data["豆瓣编号"])
     
     # 获取子节点URL
     links=bs.find_all(class_="recommendations-bd")
@@ -161,17 +164,16 @@ def search_movie(url,depth,end):
     # 递归搜索,深度优先
     if depth<end:
         for link in link_list:
-            # print(link_list[i])
-            # print(link)
             recommend=search_movie(link,depth+1,end)
+            app.create_movie_recommendation(data["豆瓣编号"],recommend)
     
     # t3=time.time()
     # print(t3-t2)
     return data["豆瓣编号"]
 
 if __name__ =="__main__":
-    depth,end,ctr=1,2,0
-    begin="https://movie.douban.com/subject/1291561/"
+    depth,end,ctr=1,8,0
+    begin="https://movie.douban.com/subject/1292064/"
     save_path="result.json"
     searched=[]
     app=my_neo4j.neo_login()
