@@ -1,4 +1,3 @@
-from dis import findlabels
 from bs4 import BeautifulSoup
 import re
 import urllib.request,urllib.error
@@ -21,18 +20,7 @@ findLanguage=re.compile(r'<span class="pl">语言:</span> (.*?)<br/>')
 findDate=re.compile(r'<span content="(.*?)" property="v:initialReleaseDate">')
 findLength=re.compile(r'<span content=".*?" property="v:runtime">(.*?)<br/>')
 findNo=re.compile(r'([0-9]+)')
-# findRating=re.compile(r'<strong class="ll rating_num" property="v:average">(.*)</strong>')
-# findl=re.compile(r'((https|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|])')
-
-# def fun1():
-#     depth,end=1,2
-#     # base_url = "https://movie.douban.com/top250?start="
-#     base_url = "https://movie.douban.com/subject/1292052/"
-#     save_path = "result.json"
-#     base1="https://movie.douban.com/subject/1293839/?from=subject-page"
-#     search_movie(base1,depth,end)
-#     # askURL(base_url)
-#     return 0
+findCover=re.compile(r'rel="v:image" src="(.*?)"',re.S)
 
 def askURL(url):
     head = {
@@ -51,14 +39,6 @@ def askURL(url):
         if hasattr(e,"reason"):
             print(e.reason)
     return html
-
-# def getData(base_url):
-#     datalist = []
-#     for i in range(0,10):
-#         url = base_url + str(i*25)
-#         html = askURL(url)
-
-#     return datalist
 
 def saveData(dict,path):
     with open(path,"a",encoding='utf-8') as f:
@@ -148,6 +128,12 @@ def search_movie(url,depth,end):
     rating=bs.find(class_="ll rating_num").string
     rating=float(rating)
     data["评分"]=rating
+    
+    # 获取封面
+    cover_path=re.findall(findCover,content)[0]
+    # print(cover[0])
+    cover_name="covers/"+str(ctr)+'-'+data["片名"]+".jpg"
+    urllib.request.urlretrieve(cover_path, cover_name)
 
     # 保存数据
     saveData(data,save_path)
@@ -172,8 +158,8 @@ def search_movie(url,depth,end):
     return data["豆瓣编号"]
 
 if __name__ =="__main__":
-    depth,end,ctr=1,8,0
-    begin="https://movie.douban.com/subject/1292064/"
+    depth,end,ctr=1,2,0
+    begin="https://movie.douban.com/subject/1292365/?from=subject-page"
     save_path="result.json"
     searched=[]
     app=my_neo4j.neo_login()
