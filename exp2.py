@@ -1,10 +1,14 @@
+from random import random
 from bs4 import BeautifulSoup
 import re
 import urllib.request,urllib.error
-import xlwt
 import json
 import time
 import my_neo4j
+import requests
+from file_clear import del_file
+from fake_useragent import UserAgent
+
 
 # 正则匹配式
 findLink=re.compile(r'<a href="(.*)">')
@@ -27,6 +31,14 @@ def askURL(url):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
              Chrome/99.0.4844.51 Safari/537.36"
     }
+
+    # 代理
+    proxies = {
+        "http": "http://10.10.1.10:3128",
+        "https": "http://10.10.1.10:1080",
+    }
+    # proxy = 
+
     req = urllib.request.Request(url, headers=head)
     html = ""
     try:
@@ -38,13 +50,31 @@ def askURL(url):
             print(e.code)
         if hasattr(e,"reason"):
             print(e.reason)
+    response.close()
     return html
+
+def askURL2(url):
+    head = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+             Chrome/99.0.4844.51 Safari/537.36"
+    }
+    fake_headers = {"User-Agent":UserAgent().random}
+    response = sess.get(url=url, headers=fake_headers)
+    return response.content
 
 def saveData(dict,path):
     with open(path,"a",encoding='utf-8') as f:
         json.dump(dict, f, ensure_ascii=False, indent=4)
         f.write('\n')
     return
+
+def saveCover(url,name):
+    head = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+             Chrome/99.0.4844.51 Safari/537.36"
+    }
+    with open(name, 'wb') as f:
+        f.write(sess.get(url=url, headers=head).content)
 
 def search_movie(url,depth,end):
     # 通过豆瓣编号检查是否已搜索过
@@ -54,11 +84,11 @@ def search_movie(url,depth,end):
     searched.append(No)
 
     # 延迟防止IP被封
-    time.sleep(1)
+    time.sleep(2*random())
     # t1 =time.time()
 
     # 获取网页
-    html=askURL(url)
+    html=askURL2(url)
     # t2=time.time()
     # print(t2-t1)
 
@@ -133,7 +163,8 @@ def search_movie(url,depth,end):
     cover_path=re.findall(findCover,content)[0]
     # print(cover[0])
     cover_name="covers/"+str(ctr)+'-'+data["片名"]+".jpg"
-    urllib.request.urlretrieve(cover_path, cover_name)
+    # urllib.request.urlretrieve(cover_path, cover_name)
+    saveCover(cover_path, cover_name)
 
     # 保存数据
     saveData(data,save_path)
@@ -158,10 +189,15 @@ def search_movie(url,depth,end):
     return data["豆瓣编号"]
 
 if __name__ =="__main__":
-    depth,end,ctr=1,2,0
-    begin="https://movie.douban.com/subject/1292365/?from=subject-page"
+    cover_file = r'D:\data analysis and pratice\covers'
+    del_file(cover_file)# 清空covers文件夹
+    depth,end,ctr=1,8,0
+    begin="https://movie.douban.com/subject/1292064/"
     save_path="result.json"
+    open(save_path, "w").close()# 清空result.json
     searched=[]
     app=my_neo4j.neo_login()
+    app.delete_all()# 清空数据库
+    sess = requests.session()
     search_movie(begin,depth,end)
     app.close()

@@ -104,6 +104,25 @@ class App:
                 query=query, exception=exception))
             raise
 
+    def delete_all(self):
+        with self.driver.session() as session:
+            result = session.write_transaction(
+                self._delete_all)
+            # print(result)
+    
+    @staticmethod
+    def _delete_all(tx):
+        query = (
+            "match (n) optional match (n)-[r]-() delete n,r"
+        )
+        result = tx.run(query)
+        try:
+            return result
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+            raise
+
 def neo_login():
     uri = "neo4j+s://dc30ec7d.databases.neo4j.io"
     user = "neo4j"
@@ -113,8 +132,9 @@ def neo_login():
 
 if __name__ == "__main__":
     app=neo_login()
-    # app.create_movie("abc", "594")
-    # app.create_movie("def", "578")
-    # app.create_movie_recommendation("594", "578")
+    app.create_movie("abc", "594")
+    app.create_movie("def", "578")
+    app.create_movie_recommendation("594", "578")
+    app.delete_all()
     app.close()
 # jX4k6e9P-b7is1cnuw88egr8mMi9KrJaxVnf1rFWjbE
