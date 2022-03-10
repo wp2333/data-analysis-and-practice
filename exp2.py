@@ -80,7 +80,10 @@ def search_movie(url,depth,end):
     # 通过豆瓣编号检查是否已搜索过
     No=re.findall(findNo,url)[0]
     if No in searched:
-        return No
+        if mode == 'tree':
+            return '$'
+        elif mode == 'map':
+            return No
     searched.append(No)
 
     # 延迟防止IP被封
@@ -182,13 +185,19 @@ def search_movie(url,depth,end):
     if depth<end:
         for link in link_list:
             recommend=search_movie(link,depth+1,end)
-            app.create_movie_recommendation(data["豆瓣编号"],recommend)
+            if mode == 'tree':
+                if recommend=='$':
+                    continue
+                app.create_movie_recommendation(data["豆瓣编号"],recommend)
+            elif mode == 'map':
+                app.create_movie_recommendation(data["豆瓣编号"],recommend)
     
     # t3=time.time()
     # print(t3-t2)
     return data["豆瓣编号"]
 
 if __name__ =="__main__":
+    mode="tree"# 'tree'模式产生搜索树,'map'模式产生有环推荐图
     cover_file = r'D:\data analysis and pratice\covers'
     del_file(cover_file)# 清空covers文件夹
     depth,end,ctr=1,8,0
