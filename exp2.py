@@ -26,18 +26,12 @@ findLength=re.compile(r'<span content=".*?" property="v:runtime">(.*?)<br/>')
 findNo=re.compile(r'([0-9]+)')
 findCover=re.compile(r'rel="v:image" src="(.*?)"',re.S)
 
+# urllib库获取网页内容
 def askURL(url):
     head = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
              Chrome/99.0.4844.51 Safari/537.36"
     }
-
-    # 代理
-    proxies = {
-        "http": "http://10.10.1.10:3128",
-        "https": "http://10.10.1.10:1080",
-    }
-    # proxy = 
 
     req = urllib.request.Request(url, headers=head)
     html = ""
@@ -53,6 +47,7 @@ def askURL(url):
     response.close()
     return html
 
+# requests库获取网页内容
 def askURL2(url):
     head = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
@@ -62,20 +57,24 @@ def askURL2(url):
     response = sess.get(url=url, headers=fake_headers)
     return response.content
 
+# 数据保存
 def saveData(dict,path):
     with open(path,"a",encoding='utf-8') as f:
         json.dump(dict, f, ensure_ascii=False, indent=4)
         f.write('\n')
     return
 
+# 电影封面保存
 def saveCover(url,name):
     head = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
              Chrome/99.0.4844.51 Safari/537.36"
     }
+    fake_headers = {"User-Agent":UserAgent().random}
     with open(name, 'wb') as f:
-        f.write(sess.get(url=url, headers=head).content)
+        f.write(sess.get(url=url, headers=fake_headers).content)
 
+# 搜索函数
 def search_movie(url,depth,end):
     # 通过豆瓣编号检查是否已搜索过
     No=re.findall(findNo,url)[0]
@@ -158,9 +157,12 @@ def search_movie(url,depth,end):
     for i in range(len(movie_length)):
         data["片长"].append(movie_length[i])
     # 获取评分
-    rating=bs.find(class_="ll rating_num").string
-    rating=float(rating)
-    data["评分"]=rating
+    try:
+        rating=bs.find(class_="ll rating_num").string
+        rating=float(rating)
+        data["评分"]=rating
+    except:
+        data["评分"]=-1
     
     # 获取封面
     cover_path=re.findall(findCover,content)[0]
@@ -201,12 +203,13 @@ if __name__ =="__main__":
     cover_file = r'D:\data analysis and pratice\covers'
     del_file(cover_file)# 清空covers文件夹
     depth,end,ctr=1,8,0
-    begin="https://movie.douban.com/subject/1292064/"
+    begin="https://movie.douban.com/subject/1292064/"# 楚门的世界
+    begin2="https://movie.douban.com/subject/1291561/"# 千与千寻
     save_path="result.json"
     open(save_path, "w").close()# 清空result.json
     searched=[]
     app=my_neo4j.neo_login()
     app.delete_all()# 清空数据库
     sess = requests.session()
-    search_movie(begin,depth,end)
+    search_movie(begin2,depth,end)
     app.close()
